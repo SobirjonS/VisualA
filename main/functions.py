@@ -1,10 +1,11 @@
+import google.generativeai as genai
+from django.conf import settings
 import speech_recognition as sr
 from pydub import AudioSegment
 from gtts import gTTS
-import os
-import google.generativeai as genai
 import sys
 import re
+import os
 
 
 def generate_answer(data):
@@ -39,11 +40,11 @@ def audio_to_text(audio_path):
     # Загружаем аудиофайл и конвертируем в формат WAV
     audio = AudioSegment.from_file(audio_path)
     audio = audio.set_channels(1)  # Устанавливаем один канал (моно)
-    audio.export("temp/temp.wav", format="wav")
+    audio.export("media/temp/temp.wav", format="wav")
 
     # Используем Recognizer из SpeechRecognition
     recognizer = sr.Recognizer()
-    audio_file = sr.AudioFile("temp/temp.wav")
+    audio_file = sr.AudioFile("media/temp/temp.wav")
 
     with audio_file as source:
         audio_data = recognizer.record(source)
@@ -60,12 +61,15 @@ def audio_to_text(audio_path):
 
 
 
-def text_to_audio(text, output_path='audio/output_audio.mp3'):
-    # Создаем объект gTTS для английского языка
-    tts = gTTS(text, lang='en')
+def text_to_audio(text, filename='output_audio.mp3'):
+    audio_path = os.path.join(settings.MEDIA_ROOT, 'audio')
+    if not os.path.exists(audio_path):
+        os.makedirs(audio_path)
     
-    # Сохраняем аудиофайл
+    output_path = os.path.join(audio_path, filename)
+    tts = gTTS(text, lang='en')
     tts.save(output_path)
 
-    return output_path
+    audio_url = os.path.join(settings.MEDIA_URL, 'audio', filename)
+    return audio_url
 

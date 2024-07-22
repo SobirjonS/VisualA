@@ -3,14 +3,13 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from . import functions
 
-
 @api_view(['POST'])
 def audio_question(request):
     request_audio = request.FILES.get('audio')
     if not request_audio:
         return Response({"error": "No audio file provided."}, status=status.HTTP_400_BAD_REQUEST)
     
-    audio_path = f'temp/audio.{request_audio.name.split(".")[-1]}'
+    audio_path = f'media/temp/audio.{request_audio.name.split(".")[-1]}'
     with open(audio_path, 'wb') as f:
         for chunk in request_audio.chunks():
             f.write(chunk)
@@ -24,10 +23,10 @@ def audio_question(request):
     
     return Response({"recognized_text": recognized_text, "text_answer": text_answer, "audio_answer": audio_answer}, status=status.HTTP_200_OK)
 
-
 @api_view(['POST'])
 def text_question(request):
     data = request.data.get('text')
+    print(data)
     if not data:
         return Response({"error": "No text provided."}, status=status.HTTP_400_BAD_REQUEST)
     
