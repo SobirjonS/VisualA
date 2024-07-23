@@ -61,15 +61,8 @@ def audio_to_text(audio_path):
 
 
 
-def text_to_audio(text, filename='output_audio.mp3'):
-    audio_path = os.path.join(settings.MEDIA_ROOT, 'audio')
-    if not os.path.exists(audio_path):
-        os.makedirs(audio_path)
-    
-    output_path = os.path.join(audio_path, filename)
+def text_to_audio(text, output_path='media/audio/output_audio.mp3'):
     tts = gTTS(text, lang='en')
     tts.save(output_path)
-
-    audio_url = os.path.join(settings.MEDIA_URL, 'audio', filename)
-    return audio_url
+    return output_path 
 
