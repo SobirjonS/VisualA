@@ -17,20 +17,20 @@ def audio_question(request):
     recognized_text = functions.audio_to_text(audio_path)
     if not recognized_text:
         return Response({"error": "Could not recognize any text from the audio."}, status=status.HTTP_400_BAD_REQUEST)
-    
     text_answer = functions.generate_answer(recognized_text)
-    audio_answer = functions.text_to_audio(text_answer)
+    uz_answer = functions.translate_ru_to_uz(text_answer)
+    audio_answer = functions.text_to_speech(uz_answer)
     
-    return Response({"recognized_text": recognized_text, "text_answer": text_answer, "audio_answer": audio_answer}, status=status.HTTP_200_OK)
+    return Response({"recognized_text": recognized_text, "uz_answer": uz_answer, "audio_answer": "media/audio/output_audio.m4a"}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def text_question(request):
     data = request.data.get('text')
-    print(data)
     if not data:
         return Response({"error": "No text provided."}, status=status.HTTP_400_BAD_REQUEST)
     
     text_answer = functions.generate_answer(data)
-    audio_answer = functions.text_to_audio(text_answer)
+    uz_answer = functions.translate_ru_to_uz(text_answer)
+    audio_answer = functions.text_to_speech(uz_answer)
     
-    return Response({"text_answer": text_answer, "audio_answer": audio_answer}, status=status.HTTP_200_OK)
+    return Response({"uz_answer": uz_answer, "audio_answer": "media/audio/output_audio.m4a"}, status=status.HTTP_200_OK)

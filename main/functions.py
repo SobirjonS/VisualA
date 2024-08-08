@@ -1,68 +1,101 @@
+from deep_translator import GoogleTranslator
 import google.generativeai as genai
-from django.conf import settings
 import speech_recognition as sr
 from pydub import AudioSegment
-from gtts import gTTS
+import requests
 import sys
 import re
 import os
 
 
+def translate_uz_to_en(text: str) -> str:
+    translator = GoogleTranslator(source='uz', target='en')
+    translation = translator.translate(text)
+    return translation
+
+
+def translate_en_to_uz(text: str) -> str:
+    translator = GoogleTranslator(source='en', target='uz')
+    translation = translator.translate(text)
+    return translation
+
+
+def translate_ru_to_uz(text: str) -> str:
+    translator = GoogleTranslator(source='ru', target='uz')
+    translation = translator.translate(text)
+    return translation
+
+
 def generate_answer(data):
-    # Сохраняем текущий stderr
     stderr_fileno = sys.stderr.fileno()
     old_stderr = os.dup(stderr_fileno)
 
-    # Перенаправляем stderr в os.devnull
+
     sys.stderr.flush()
     os.dup2(os.open(os.devnull, os.O_WRONLY), stderr_fileno)
     try:
-        # Настраиваем API ключ
-        genai.configure(api_key="AIzaSyCZWUo7rG6rQdm7R3w88_7NSbbzjpidLe4")
+        genai.configure(api_key="AIzaSyDwsJ-wwN943ubYPgZm6jhHs0zpCS4ZlWw")
 
-        # Инициализируем модель
         model = genai.GenerativeModel('gemini-1.5-flash')
 
-        # Получаем ответ от модели
         response = model.generate_content(data)
     finally:
-        # Восстанавливаем stderr
         sys.stderr.flush()
         os.dup2(old_stderr, stderr_fileno)
         os.close(old_stderr)
 
     clean_response = re.sub(r'\n|\*|\*\*', '', response.text).strip()
-    # Выводим ответ без предупреждений
     return clean_response   
 
 
 def audio_to_text(audio_path):
-    # Загружаем аудиофайл и конвертируем в формат WAV
-    audio = AudioSegment.from_file(audio_path)
-    audio = audio.set_channels(1)  # Устанавливаем один канал (моно)
+    audio = AudioSegment.from_file(audio_path, format="aac")
+    audio = audio.set_channels(1)
     audio.export("media/temp/temp.wav", format="wav")
 
-    # Используем Recognizer из SpeechRecognition
     recognizer = sr.Recognizer()
     audio_file = sr.AudioFile("media/temp/temp.wav")
 
     with audio_file as source:
         audio_data = recognizer.record(source)
     
-    # Попробуем распознать текст из аудиофайла
     try:
-        # Используем Google Web Speech API для распознавания
-        text = recognizer.recognize_google(audio_data, language="en-EN")
+        text = recognizer.recognize_google(audio_data, language="ru-RU")
         return text
     except sr.UnknownValueError:
-        return ""
+        return "Речь не распознана"
     except sr.RequestError as e:
-        return ""
+        return f"Ошибка запроса к сервису распознавания: {str(e)}"
 
 
+import requests
 
-def text_to_audio(text, output_path='media/audio/output_audio.mp3'):
-    tts = gTTS(text, lang='en')
-    tts.save(output_path)
-    return output_path 
+def text_to_speech(text):
+    url = 'https://api.narakeet.com/text-to-speech/m4a'
+    
+    headers = {
+        'Accept': 'application/octet-stream',
+        'Content-Type': 'text/plain',
+        'x-api-key': 'hZctKZjQNh8yFrSKG61Ms1buS6MXsnYK1HnKJowK',
+    }
+    
+    params = {
+        'voice': 'dilnoza',  # Используем имя голоса
+        'language': 'uz-UZ'  # Используем код языка
+    }
+    
+    data = text.encode('utf8')
+    
+    response = requests.post(url, headers=headers, params=params, data=data)
+    
+    if response.status_code == 200:
+        with open('media/audio/output_audio.m4a', 'wb') as f:
+            f.write(response.content)
+    else:
+        print(f"Ошибка: {response.status_code}, {response.text}")
 
+
+# def text_to_speech(text, output_path='media/audio/output_audio.mp3'):
+#     tts = gTTS(text, lang='ru')
+#     tts.save(output_path)
+#     return output_path
