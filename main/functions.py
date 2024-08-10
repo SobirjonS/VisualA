@@ -1,10 +1,10 @@
 from . import models
 from django.core.files import File
-from io import BytesIO
+
 from deep_translator import GoogleTranslator
 import google.generativeai as genai
 import speech_recognition as sr
-from pydub import AudioSegment
+from io import BytesIO
 import requests
 import sys
 import re
@@ -83,12 +83,8 @@ def text_to_speech(text, user):
     
     if response.status_code == 200:
         m4a_audio = BytesIO(response.content)
-        audio = AudioSegment.from_file(m4a_audio, format="m4a")
+        m4a_audio.seek(0)
         
-        wav_io = BytesIO()
-        audio.export(wav_io, format="wav")
-        wav_io.seek(0)
-
-        wav_file = File(wav_io, name="output_audio.wav")
-        audio_instance = models.ResponseAudio(user=user, audio=wav_file)
+        m4a_file = File(m4a_audio, name="audio_answer.m4a")
+        audio_instance = models.ResponseAudio(user=user, audio=m4a_file)
         audio_instance.save()
